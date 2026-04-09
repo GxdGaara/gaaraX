@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GxdGaara</title>
+<link href="https://fonts.googleapis.com/css2?family=Neue+Haas+Grotesk+Display+Pro:wght@400;500;700&family=Epilogue:ital,wght@0,300;0,400;0,700;0,900;1,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --cream:#F4F0EA;
+  --warm:#EDE8E0;
+  --ink:#111009;
+  --mid:#6B6560;
+  --accent:#D4622A;
+  --sand:#C9A96E;
+  --rule:rgba(17,16,9,.1);
+  --r:8px;
+}
+
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;font-size:16px;}
+
+body{
+  background:var(--cream);
+  color:var(--ink);
+  font-family:'Epilogue',sans-serif;
+  overflow-x:hidden;
+  cursor:none;
+}
+
+/* ── CURSOR ── */
+#dot,#ring{
+  position:fixed;border-radius:50%;
+  pointer-events:none;z-index:9000;
+  transform:translate(-50%,-50%);
+}
+#dot{width:7px;height:7px;background:var(--ink);transition:width .2s,height .2s,background .2s;}
+#ring{
+  width:30px;height:30px;
+  border:1px solid rgba(17,16,9,.3);
+  transition:width .3s,height .3s,border-color .3s;
+  z-index:8999;
+}
+.link-hover #dot{width:4px;height:4px;background:var(--accent);}
+.link-hover #ring{width:44px;height:44px;border-color:var(--accent);}
+
+/* ── PRELOADER ── */
+#loader{
+  position:fixed;inset:0;z-index:8000;
+  background:#fff;
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:2rem;
+  transition:clip-path 1s cubic-bezier(.77,0,.18,1);
+  clip-path:inset(0 0 0 0);
+  overflow:hidden;
+}
+#loader.out{clip-path:inset(0 0 100% 0);}
+
+/* noise grain on loader */
+#loader::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  opacity:.06;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:160px;
+}
+
+/* splatter blobs behind text */
+#loader::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 180px 120px at 15% 25%, rgba(255,80,50,.13), transparent),
+    radial-gradient(ellipse 140px 100px at 80% 70%, rgba(52,152,219,.12), transparent),
+    radial-gradient(ellipse 120px 80px at 70% 15%, rgba(241,196,15,.14), transparent),
+    radial-gradient(ellipse 100px 140px at 20% 80%, rgba(155,89,182,.11), transparent),
+    radial-gradient(ellipse 90px 60px at 90% 30%, rgba(78,205,196,.13), transparent);
+}
+
+.ldr-svg{
+  position:relative;z-index:1;
+  opacity:0;
+  animation:ldrFade .5s ease forwards .2s;
+}
+.ldr-bar{
+  width:160px;height:1px;
+  background:rgba(17,16,9,.1);
+  overflow:hidden;
+  position:relative;z-index:1;
+}
+.ldr-fill{
+  height:100%;
+  background:linear-gradient(90deg,#FF5032,#FFD000,#1ABC9C,#9B59B6);
+  background-size:300% 100%;
+  width:0;
+  animation:ldrFill 1.5s ease forwards .3s;
+}
+@keyframes ldrFill{to{width:100%;}}
+@keyframes ldrFade{to{opacity:1;}}
+.ldr-mono{
+  font-family:'JetBrains Mono',monospace;font-size:.5rem;
+  letter-spacing:5px;text-transform:uppercase;
+  color:rgba(17,16,9,.3);
+  position:relative;z-index:1;
+  opacity:0;animation:ldrFade .5s ease forwards .5s;
+}
+
+/* ── GRID SYSTEM ── */
+.container{max-width:1320px;margin:0 auto;padding:0 2.5rem;}
+
+/* ── NAV ── */
+header{
+  position:fixed;top:0;left:0;right:0;z-index:700;
+  border-bottom:1px solid var(--rule);
+  background:rgba(244,240,234,.92);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  opacity:0;animation:fadeUp .6s ease forwards 1.8s;
+}
+.nav-inner{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1.2rem 2.5rem;
+}
+.nav-brand{
+  font-weight:900;font-size:.8rem;letter-spacing:3px;
+  text-transform:uppercase;color:var(--ink);text-decoration:none;
+}
+.nav-brand span{color:var(--accent);}
+.nav-links{display:flex;gap:2.5rem;list-style:none;}
+.nav-links a{
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;
+  letter-spacing:2px;text-transform:uppercase;
+  color:var(--mid);text-decoration:none;transition:color .2s;
+}
+.nav-links a:hover{color:var(--ink);}
+.nav-status{
+  display:flex;align-items:center;gap:.5rem;
+  font-family:'JetBrains Mono',monospace;font-size:.55rem;
+  letter-spacing:2px;text-transform:uppercase;color:var(--mid);
+}
+.status-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:#4CAF50;
+  box-shadow:0 0 0 2px rgba(76,175,80,.2);
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 2px rgba(76,175,80,.2);}50%{box-shadow:0 0 0 5px rgba(76,175,80,.08);}}
+
+/* ── HERO ── */
+#hero{
+  min-height:100vh;
+  padding:10rem 2.5rem 4rem;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  grid-template-rows:1fr auto;
+  gap:0;
+  position:relative;
+  border-bottom:1px solid var(--rule);
+  overflow:hidden;
+}
+
+/* Colourful art panel — right side */
+.hero-art-panel{
+  grid-column:2;grid-row:1/3;
+  position:relative;overflow:hidden;
+  margin:-10rem -2.5rem -4rem 2.5rem;
+}
+.hap-canvas{
+  width:100%;height:100%;min-height:100vh;
+  position:relative;
+  background:linear-gradient(145deg,#1a0533 0%,#0d1f4a 35%,#0a3d2e 65%,#2d1200 100%);
+  overflow:hidden;
+}
+
+/* Floating colour orbs inside panel */
+.orb{position:absolute;border-radius:50%;filter:blur(50px);animation:orbFloat linear infinite;}
+.o1{width:320px;height:320px;background:rgba(255,107,53,.7);top:-60px;right:-60px;animation-duration:12s;animation-delay:0s;}
+.o2{width:260px;height:260px;background:rgba(78,205,196,.6);bottom:10%;left:-40px;animation-duration:15s;animation-delay:3s;}
+.o3{width:200px;height:200px;background:rgba(155,89,182,.7);top:40%;left:30%;animation-duration:10s;animation-delay:1s;}
+.o4{width:180px;height:180px;background:rgba(241,196,15,.6);bottom:25%;right:10%;animation-duration:13s;animation-delay:5s;}
+.o5{width:140px;height:140px;background:rgba(52,152,219,.8);top:20%;left:10%;animation-duration:9s;animation-delay:2s;}
+@keyframes orbFloat{
+  0%{transform:translate(0,0) scale(1);}
+  25%{transform:translate(20px,-30px) scale(1.05);}
+  50%{transform:translate(-10px,20px) scale(.95);}
+  75%{transform:translate(30px,10px) scale(1.08);}
+  100%{transform:translate(0,0) scale(1);}
+}
+
+/* SVG art on top of orbs */
+.hap-svg{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+}
+
+.panel-tag{
+  position:absolute;bottom:2rem;left:2rem;
+  font-family:'JetBrains Mono',monospace;font-size:.55rem;
+  letter-spacing:3px;text-transform:uppercase;
+  color:rgba(244,240,234,.4);
+}
+
+/* Hero left content */
+.hero-left{
+  grid-column:1;grid-row:1;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  padding-bottom:3rem;
+  padding-right:3rem;
+}
+
+.hero-index{
+  font-family:'JetBrains Mono',monospace;font-size:.55rem;
+  letter-spacing:4px;text-transform:uppercase;color:var(--mid);
+  margin-bottom:2rem;
+  opacity:0;animation:fadeUp .6s ease forwards 2s;
+}
+
+.hero-h{
+  font-weight:900;
+  font-size:clamp(3.5rem,7vw,7.5rem);
+  line-height:.92;letter-spacing:-3px;
+  text-transform:uppercase;
+}
+.hero-h .r1,.hero-h .r2{display:block;overflow:hidden;}
+.hero-h .r1 span,.hero-h .r2 span{
+  display:block;
+  transform:translateY(110%);
+  animation:slideUp .8s cubic-bezier(.16,1,.3,1) forwards;
+}
+.hero-h .r1 span{animation-delay:2.1s;}
+.hero-h .r2 span{animation-delay:2.3s;color:var(--accent);}
+
+.hero-desc{
+  font-size:.9rem;font-weight:300;color:var(--mid);
+  line-height:1.8;max-width:280px;
+  margin-top:2.5rem;
+  opacity:0;animation:fadeUp .6s ease forwards 2.5s;
+  font-style:italic;
+}
+
+/* Hero bottom strip */
+.hero-strip{
+  grid-column:1;grid-row:2;
+  display:flex;align-items:center;gap:2rem;
+  padding:1.5rem 0;
+  border-top:1px solid var(--rule);
+  padding-right:3rem;
+  opacity:0;animation:fadeUp .6s ease forwards 2.7s;
+}
+.strip-item{
+  font-family:'JetBrains Mono',monospace;font-size:.55rem;
+  letter-spacing:3px;text-transform:uppercase;color:var(--mid);
+}
+.strip-div{width:1px;height:14px;background:var(--rule);}
+
+/* ── ABOUT ROW ── */
+#about{
+  border-bottom:1px solid var(--rule);
+}
+.about-grid{
+  display:grid;grid-template-columns:200px 1fr 1fr;
+  border-left:1px solid var(--rule);
+}
+.about-col{
+  padding:4rem 2.5rem;
+  border-right:1px solid var(--rule);
+}
+.col-label{
+  font-family:'JetBrains Mono',monospace;font-size:.55rem;
+  letter-spacing:4px;text-transform:uppercase;color:var(--mid);
+  margin-bottom:2rem;
+  display:flex;align-items:center;gap:.5rem;
+}
+.col-label::before{content:attr(data-n);color:var(--accent);}
+
+.about-col h2{
+  font-size:clamp(1.5rem,2.5vw,2.2rem);
+  font-weight:700;letter-spacing:-1px;line-height:1.15;
+  margin-bottom:1.5rem;
+}
+.about-col p{
+  font-size:.88rem;color:var(--mid);line-height:1.9;
+  font-weight:300;
+}
+.about-col p strong{color:var(--ink);font-weight:500;}
+
+/* Tags inside about */
+.tag-wrap{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:2rem;}
+.tag{
+  padding:.25rem .75rem;border:1px solid var(--rule);
+  border-radius:999px;
+  font-family:'JetBrains Mono',monospace;font-size:.55rem;
+  letter-spacing:2px;text-transform:uppercase;color:var(--mid);
+  transition:all .25s;
+}
+.tag:hover{background:var(--ink);color:var(--cream);border-color:var(--ink);}
+
+/* Stat col */
+.stat-list{margin-top:0;}
+.stat-row{
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding:1rem 0;border-bottom:1px solid var(--rule);
+}
+.stat-row:first-child{padding-top:0;}
+.stat-k{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:3px;text-transform:uppercase;color:var(--mid);}
+.stat-v{font-size:.88rem;font-weight:500;}
+
+/* ── COLOUR STRIP (3 panels) ── */
+#panels{
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  border-bottom:1px solid var(--rule);
+  height:360px;
+}
+.panel{
+  position:relative;overflow:hidden;
+  border-right:1px solid var(--rule);
+}
+.panel:last-child{border-right:none;}
+
+/* Panel backgrounds */
+.p1{background:linear-gradient(160deg,#FF6B35,#F7C59F);}
+.p2{background:linear-gradient(160deg,#1a1a2e,#16213e,#0f3460);}
+.p3{background:linear-gradient(160deg,#56CCF2,#2F80ED);}
+
+.panel-inner{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  padding:2rem;
+}
+.panel-word{
+  font-size:clamp(2rem,4vw,3.5rem);
+  font-weight:900;letter-spacing:-2px;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.15);
+  line-height:1;
+  margin-bottom:.5rem;
+  transition:color .4s ease;
+}
+.panel:hover .panel-word{color:rgba(255,255,255,.4);}
+.panel-sub{
+  font-family:'JetBrains Mono',monospace;font-size:.55rem;
+  letter-spacing:3px;text-transform:uppercase;
+  color:rgba(255,255,255,.5);
+}
+
+/* SVG art overlays */
+.panel-art{position:absolute;inset:0;pointer-events:none;}
+
+/* ── MARQUEE ── */
+#mq{
+  overflow:hidden;
+  background:var(--ink);
+  padding:1.5rem 0;
+}
+.mq-track{display:flex;animation:mq 25s linear infinite;}
+@keyframes mq{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+.mq-row{display:flex;align-items:center;gap:2rem;flex-shrink:0;padding-right:2rem;}
+.mq-t{
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;
+  letter-spacing:4px;text-transform:uppercase;
+  color:rgba(244,240,234,.35);white-space:nowrap;
+}
+.mq-dot{width:3px;height:3px;border-radius:50%;background:var(--accent);flex-shrink:0;}
+
+/* ── SOCIALS ── */
+#socials{border-bottom:1px solid var(--rule);}
+.soc-header{
+  display:flex;justify-content:space-between;align-items:flex-end;
+  padding:3rem 2.5rem 2rem;border-bottom:1px solid var(--rule);
+}
+.soc-h{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:4px;text-transform:uppercase;color:var(--mid);}
+.soc-h span{color:var(--accent);}
+.soc-note{font-size:.8rem;color:var(--mid);font-style:italic;}
+
+.soc-list{list-style:none;}
+.soc-item{border-bottom:1px solid var(--rule);}
+.soc-link{
+  display:grid;
+  grid-template-columns:60px 1fr auto auto;
+  align-items:center;gap:2rem;
+  padding:1.8rem 2.5rem;
+  text-decoration:none;color:var(--ink);
+  position:relative;overflow:hidden;
+  transition:padding-left .35s ease;
+}
+.soc-link::after{
+  content:'';position:absolute;inset:0;
+  background:var(--warm);
+  transform:scaleX(0);transform-origin:left;
+  transition:transform .4s cubic-bezier(.16,1,.3,1);
+}
+.soc-link:hover::after{transform:scaleX(1);}
+.soc-link:hover{padding-left:3.5rem;}
+
+.soc-n{
+  font-family:'JetBrains Mono',monospace;font-size:.55rem;
+  letter-spacing:3px;color:var(--mid);
+  position:relative;z-index:1;
+}
+.soc-name{
+  font-size:clamp(1.2rem,2.2vw,1.8rem);font-weight:700;
+  letter-spacing:-.5px;position:relative;z-index:1;
+  transition:color .3s;
+}
+.soc-link:hover .soc-name{color:var(--accent);}
+.soc-handle{
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;
+  letter-spacing:2px;color:var(--mid);
+  position:relative;z-index:1;
+}
+.soc-arr{
+  font-size:1rem;color:var(--mid);
+  transform:rotate(-45deg);
+  transition:transform .3s,color .3s;
+  position:relative;z-index:1;
+}
+.soc-link:hover .soc-arr{transform:rotate(0);color:var(--accent);}
+
+/* ── CLOSING ── */
+#closing{
+  min-height:75vh;
+  display:grid;grid-template-columns:1fr 1fr;
+  border-bottom:1px solid var(--rule);
+  overflow:hidden;
+}
+.close-left{
+  padding:5rem 2.5rem;
+  border-right:1px solid var(--rule);
+  display:flex;flex-direction:column;justify-content:flex-end;
+}
+.close-label{
+  font-family:'JetBrains Mono',monospace;font-size:.55rem;
+  letter-spacing:4px;text-transform:uppercase;color:var(--mid);
+  margin-bottom:3rem;
+}
+.close-h{
+  font-size:clamp(2.5rem,5vw,5rem);
+  font-weight:900;letter-spacing:-2px;text-transform:uppercase;
+  line-height:.92;
+}
+.close-h .l1{display:block;}
+.close-h .l2{display:block;}
+.close-h .l3{display:block;color:var(--accent);}
+
+/* Animate in when in view */
+.cl-line{clip-path:inset(0 0 100% 0);transition:clip-path .9s cubic-bezier(.16,1,.3,1);}
+.cl-line.on{clip-path:inset(0 0 0% 0);}
+.cl-line:nth-child(2){transition-delay:.15s;}
+.cl-line:nth-child(3){transition-delay:.3s;}
+
+.close-sub{
+  font-family:'JetBrains Mono',monospace;font-size:.55rem;
+  letter-spacing:5px;text-transform:uppercase;color:var(--mid);
+  margin-top:2.5rem;opacity:0;transition:opacity .8s ease .8s;
+}
+.close-sub.on{opacity:1;}
+
+/* Close right — final art panel */
+.close-right{
+  position:relative;overflow:hidden;
+  background:linear-gradient(135deg,#0d0d0d 0%,#1a0a00 50%,#0d1a00 100%);
+}
+.cr-orb{
+  position:absolute;border-radius:50%;filter:blur(60px);
+  animation:orbFloat linear infinite;
+}
+.cr1{width:300px;height:300px;background:rgba(212,98,42,.5);top:-50px;left:-50px;animation-duration:11s;}
+.cr2{width:250px;height:250px;background:rgba(201,169,110,.4);bottom:0;right:-30px;animation-duration:14s;animation-delay:3s;}
+.cr3{width:160px;height:160px;background:rgba(78,205,196,.4);top:50%;left:40%;animation-duration:8s;animation-delay:1s;}
+
+.cr-kanji{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:clamp(6rem,15vw,14rem);font-weight:900;
+  color:rgba(244,240,234,.06);
+  user-select:none;
+}
+.cr-tag{
+  position:absolute;bottom:2rem;right:2rem;
+  font-family:'JetBrains Mono',monospace;font-size:.5rem;
+  letter-spacing:4px;text-transform:uppercase;
+  color:rgba(244,240,234,.25);
+}
+
+/* ── FOOTER ── */
+footer{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:1.4rem 2.5rem;
+}
+.f-l{
+  font-family:'JetBrains Mono',monospace;font-size:.5rem;
+  letter-spacing:3px;text-transform:uppercase;color:var(--mid);
+}
+.f-r{
+  font-family:'JetBrains Mono',monospace;font-size:.5rem;
+  letter-spacing:3px;text-transform:uppercase;color:var(--mid);
+}
+
+/* ── UTILS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+@keyframes slideUp{from{transform:translateY(110%);}to{transform:translateY(0);}}
+
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .8s ease,transform .8s ease;}
+.reveal.on{opacity:1;transform:translateY(0);}
+.delay1{transition-delay:.1s;}
+.delay2{transition-delay:.2s;}
+.delay3{transition-delay:.3s;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  #hero{grid-template-columns:1fr;padding:8rem 1.5rem 3rem;}
+  .hero-art-panel{display:none;}
+  .hero-left{grid-column:1;padding-right:0;}
+  .hero-strip{grid-column:1;padding-right:0;}
+  .about-grid{grid-template-columns:1fr;border-left:none;}
+  .about-col{border-right:none;border-bottom:1px solid var(--rule);padding:2.5rem 1.5rem;}
+  #panels{grid-template-columns:1fr;height:auto;}
+  .panel{height:200px;border-right:none;border-bottom:1px solid var(--rule);}
+  .soc-link{grid-template-columns:40px 1fr auto;gap:1rem;padding:1.4rem 1.5rem;}
+  .soc-handle{display:none;}
+  #closing{grid-template-columns:1fr;}
+  .close-right{height:260px;}
+  .close-left{padding:3rem 1.5rem;}
+  .nav-status{display:none;}
+  .nav-inner{padding:1.1rem 1.5rem;}
+}
+</style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div id="dot"></div>
+<div id="ring"></div>
+
+<!-- LOADER -->
+<div id="loader">
+  <!-- Graffiti SVG lettering -->
+  <svg class="ldr-svg" width="420" height="160" viewBox="0 0 420 160" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <!-- Colour fills for each letter block -->
+      <linearGradient id="gG1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#FF5032"/>
+        <stop offset="100%" stop-color="#FF8C00"/>
+      </linearGradient>
+      <linearGradient id="gX" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#FFD000"/>
+        <stop offset="100%" stop-color="#FF5032"/>
+      </linearGradient>
+      <linearGradient id="gD" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#1ABC9C"/>
+        <stop offset="100%" stop-color="#2980B9"/>
+      </linearGradient>
+      <linearGradient id="gG2" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#9B59B6"/>
+        <stop offset="100%" stop-color="#FF5032"/>
+      </linearGradient>
+      <linearGradient id="gA" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#E74C3C"/>
+        <stop offset="100%" stop-color="#FFD000"/>
+      </linearGradient>
+      <linearGradient id="gAA" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#2ECC71"/>
+        <stop offset="100%" stop-color="#1ABC9C"/>
+      </linearGradient>
+      <linearGradient id="gR" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#3498DB"/>
+        <stop offset="100%" stop-color="#9B59B6"/>
+      </linearGradient>
+      <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+        <feDropShadow dx="3" dy="3" stdDeviation="2" flood-color="rgba(0,0,0,.18)"/>
+      </filter>
+    </defs>
+
+    <!-- Splatter dots — tiny detail -->
+    <circle cx="18" cy="22" r="3" fill="#FF5032" opacity=".5"/>
+    <circle cx="30" cy="10" r="2" fill="#FFD000" opacity=".6"/>
+    <circle cx="395" cy="140" r="3.5" fill="#1ABC9C" opacity=".5"/>
+    <circle cx="408" cy="128" r="2" fill="#9B59B6" opacity=".6"/>
+    <circle cx="380" cy="18" r="2.5" fill="#E74C3C" opacity=".4"/>
+    <circle cx="42" cy="148" r="2" fill="#3498DB" opacity=".5"/>
+    <circle cx="12" cy="135" r="3" fill="#2ECC71" opacity=".4"/>
+    <circle cx="405" cy="55" r="2" fill="#FFD000" opacity=".5"/>
+
+    <!-- Star burst details -->
+    <path d="M385,30 L388,23 L391,30 L398,27 L393,33 L398,39 L391,36 L388,43 L385,36 L378,39 L383,33 L378,27 Z" fill="#FFD000" opacity=".35"/>
+    <path d="M25,95 L27,90 L29,95 L34,93 L30,97 L34,101 L29,99 L27,104 L25,99 L20,101 L24,97 L20,93 Z" fill="#FF5032" opacity=".3"/>
+
+    <!-- Drip 1 under G -->
+    <path d="M38,118 Q40,130 39,145 Q39,150 37,148 Q35,146 36,130 Q37,120 38,118Z" fill="#FF5032" opacity=".4"/>
+    <!-- Drip 2 under A -->
+    <path d="M270,115 Q272,128 271,140 Q271,145 269,143 Q267,141 268,126 Q269,117 270,115Z" fill="#E74C3C" opacity=".35"/>
+    <!-- Drip 3 under R -->
+    <path d="M340,112 Q342,125 341,138 Q341,143 339,141 Q337,139 338,123 Q339,114 340,112Z" fill="#3498DB" opacity=".38"/>
+
+    <!-- Outline / shadow layer (offset) -->
+    <text x="8" y="112" font-family="Impact, Arial Black, sans-serif" font-weight="900"
+      font-size="100" letter-spacing="-2"
+      fill="none" stroke="rgba(0,0,0,.12)" stroke-width="6"
+      transform="translate(3,4)">GxdGaara</text>
+
+    <!-- White highlight behind letters -->
+    <text x="8" y="112" font-family="Impact, Arial Black, sans-serif" font-weight="900"
+      font-size="100" letter-spacing="-2"
+      fill="white" stroke="white" stroke-width="8" stroke-linejoin="round">GxdGaara</text>
+
+    <!-- G — orange-red -->
+    <text x="8" y="112" font-family="Impact, Arial Black, sans-serif" font-weight="900"
+      font-size="100" fill="url(#gG1)" filter="url(#shadow)"
+      textLength="52" lengthAdjust="spacing">G</text>
+
+    <!-- x — yellow -->
+    <text x="57" y="112" font-family="Impact, Arial Black, sans-serif" font-weight="900"
+      font-size="100" fill="url(#gX)" filter="url(#shadow)"
+      textLength="46" lengthAdjust="spacing">x</text>
+
+    <!-- d — teal -->
+    <text x="100" y="112" font-family="Impact, Arial Black, sans-serif" font-weight="900"
+      font-size="100" fill="url(#gD)" filter="url(#shadow)"
+      textLength="46" lengthAdjust="spacing">d</text>
+
+    <!-- G — purple-red -->
+    <text x="152" y="112" font-family="Impact, Arial Black, sans-serif" font-weight="900"
+      font-size="100" fill="url(#gG2)" filter="url(#shadow)"
+      textLength="52" lengthAdjust="spacing">G</text>
+
+    <!-- a — red-yellow -->
+    <text x="202" y="112" font-family="Impact, Arial Black, sans-serif" font-weight="900"
+      font-size="100" fill="url(#gA)" filter="url(#shadow)"
+      textLength="44" lengthAdjust="spacing">a</text>
+
+    <!-- a — green -->
+    <text x="244" y="112" font-family="Impact, Arial Black, sans-serif" font-weight="900"
+      font-size="100" fill="url(#gAA)" filter="url(#shadow)"
+      textLength="44" lengthAdjust="spacing">a</text>
+
+    <!-- r — blue-purple -->
+    <text x="286" y="112" font-family="Impact, Arial Black, sans-serif" font-weight="900"
+      font-size="100" fill="url(#gR)" filter="url(#shadow)"
+      textLength="40" lengthAdjust="spacing">r</text>
+
+    <!-- a — orange -->
+    <text x="324" y="112" font-family="Impact, Arial Black, sans-serif" font-weight="900"
+      font-size="100" fill="url(#gG1)" filter="url(#shadow)"
+      textLength="44" lengthAdjust="spacing">a</text>
+
+    <!-- Outline stroke on top — gives graffiti edge -->
+    <text x="8" y="112" font-family="Impact, Arial Black, sans-serif" font-weight="900"
+      font-size="100" letter-spacing="-2"
+      fill="none" stroke="rgba(0,0,0,.55)" stroke-width="2.5"
+      stroke-linejoin="round">GxdGaara</text>
+
+    <!-- Inner highlight lines (graffiti shine) -->
+    <text x="8" y="112" font-family="Impact, Arial Black, sans-serif" font-weight="900"
+      font-size="100" letter-spacing="-2"
+      fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1"
+      stroke-dasharray="8 200" stroke-dashoffset="4">GxdGaara</text>
+
+    <!-- tiny tag below — "est. gxd" graffiti style -->
+    <text x="330" y="148" font-family="'JetBrains Mono',monospace" font-size="9"
+      fill="rgba(0,0,0,.2)" letter-spacing="1">©gxd</text>
+
+    <!-- star beside name -->
+    <text x="14" y="28" font-family="sans-serif" font-size="11" fill="#FFD000" opacity=".6">★</text>
+    <text x="396" y="115" font-family="sans-serif" font-size="9" fill="#1ABC9C" opacity=".5">✦</text>
+  </svg>
+
+  <div class="ldr-bar"><div class="ldr-fill"></div></div>
+  <div class="ldr-mono">Loading</div>
+</div>
+
+<!-- NAV -->
+<header>
+  <div class="nav-inner">
+    <a class="nav-brand" href="#">Gxd<span>Gaara</span></a>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#socials">Links</a></li>
+    </ul>
+    <div class="nav-status">
+      <div class="status-dot"></div>
+      Creating
+    </div>
+  </div>
+</header>
+
+<!-- ══ HERO ══ -->
+<section id="hero">
+
+  <!-- Right art panel -->
+  <div class="hero-art-panel">
+    <div class="hap-canvas">
+      <div class="orb o1"></div>
+      <div class="orb o2"></div>
+      <div class="orb o3"></div>
+      <div class="orb o4"></div>
+      <div class="orb o5"></div>
+      <div class="hap-svg">
+        <svg width="420" height="520" viewBox="0 0 420 520">
+          <!-- geometric linework -->
+          <rect x="60" y="80" width="300" height="360" rx="4" fill="none" stroke="rgba(244,240,234,.06)" stroke-width="1"/>
+          <rect x="90" y="110" width="240" height="300" rx="4" fill="none" stroke="rgba(244,240,234,.06)" stroke-width="1"/>
+          <!-- cross lines -->
+          <line x1="60" y1="260" x2="360" y2="260" stroke="rgba(244,240,234,.04)" stroke-width="1"/>
+          <line x1="210" y1="80" x2="210" y2="440" stroke="rgba(244,240,234,.04)" stroke-width="1"/>
+          <!-- Gaara symbol – big circle with kanji -->
+          <circle cx="210" cy="260" r="100" fill="none" stroke="rgba(244,240,234,.12)" stroke-width="1.5"/>
+          <circle cx="210" cy="260" r="68" fill="rgba(244,240,234,.03)" stroke="rgba(244,240,234,.07)" stroke-width="1"/>
+          <text x="210" y="280" text-anchor="middle" dominant-baseline="middle"
+            font-family="sans-serif" font-weight="700" font-size="72"
+            fill="rgba(244,240,234,.18)">愛</text>
+          <!-- corner marks -->
+          <path d="M60,80 L80,80 M60,80 L60,100" stroke="rgba(244,240,234,.3)" stroke-width="1.5" fill="none"/>
+          <path d="M360,80 L340,80 M360,80 L360,100" stroke="rgba(244,240,234,.3)" stroke-width="1.5" fill="none"/>
+          <path d="M60,440 L80,440 M60,440 L60,420" stroke="rgba(244,240,234,.3)" stroke-width="1.5" fill="none"/>
+          <path d="M360,440 L340,440 M360,440 L360,420" stroke="rgba(244,240,234,.3)" stroke-width="1.5" fill="none"/>
+        </svg>
+      </div>
+      <div class="panel-tag">愛 · GxdGaara · Visual</div>
+    </div>
+  </div>
+
+  <!-- Left text -->
+  <div class="hero-left">
+    <div class="hero-index">Personal · GxdGaara</div>
+    <h1 class="hero-h">
+      <div class="r1"><span>Gxd</span></div>
+      <div class="r2"><span>Gaara</span></div>
+    </h1>
+    <p class="hero-desc">Creating. Exploring. Evolving.<br>Building a space where creativity meets syzygy.</p>
+  </div>
+
+  <div class="hero-strip">
+    <span class="strip-item">Sand</span>
+    <div class="strip-div"></div>
+    <span class="strip-item">Storms</span>
+    <div class="strip-div"></div>
+    <span class="strip-item">Still Standing</span>
+  </div>
+
+</section>
+
+<!-- ══ ABOUT ══ -->
+<section id="about">
+  <div class="about-grid">
+
+    <div class="about-col reveal">
+      <div class="col-label" data-n="01">Identity</div>
+      <div class="stat-list">
+        <div class="stat-row"><span class="stat-k">Name</span><span class="stat-v">GxdGaara</span></div>
+        <div class="stat-row"><span class="stat-k">Mode</span><span class="stat-v">Creating</span></div>
+        <div class="stat-row"><span class="stat-k">Status</span><span class="stat-v">Evolving</span></div>
+        <div class="stat-row"><span class="stat-k">Element</span><span class="stat-v">Sand</span></div>
+        <div class="stat-row"><span class="stat-k">Energy</span><span class="stat-v">Syzygy</span></div>
+      </div>
+    </div>
+
+    <div class="about-col reveal delay1">
+      <div class="col-label" data-n="02">About</div>
+      <h2>No blueprint.<br>Just building.</h2>
+      <p>Inspired by <strong>Gaara of the Sand</strong> — the one who walked alone and became something real. That energy lives here.</p>
+      <p style="margin-top:1rem;">No noise. No template. Just creating from scratch, every day.</p>
+      <div class="tag-wrap">
+        <span class="tag">Sand</span>
+        <span class="tag">Art</span>
+        <span class="tag">Hood</span>
+        <span class="tag">Motion</span>
+        <span class="tag">Syzygy</span>
+      </div>
+    </div>
+
+    <div class="about-col reveal delay2">
+      <div class="col-label" data-n="03">Now</div>
+      <div class="stat-list">
+        <div class="stat-row"><span class="stat-k">Doing</span><span class="stat-v">Building</span></div>
+        <div class="stat-row"><span class="stat-k">Learning</span><span class="stat-v">Everything</span></div>
+        <div class="stat-row"><span class="stat-k">Inspired by</span><span class="stat-v">Gaara</span></div>
+        <div class="stat-row"><span class="stat-k">Goal</span><span class="stat-v">Keep going</span></div>
+        <div class="stat-row"><span class="stat-k">Village</span><span class="stat-v">Not needed</span></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══ 3 COLOUR PANELS ══ -->
+<div id="panels">
+
+  <div class="panel p1 reveal">
+    <svg class="panel-art" viewBox="0 0 440 360" preserveAspectRatio="xMidYMid slice">
+      <circle cx="380" cy="40" r="120" fill="rgba(255,255,255,.07)"/>
+      <circle cx="380" cy="40" r="70" fill="rgba(255,255,255,.05)"/>
+      <line x1="0" y1="180" x2="440" y2="180" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
+      <path d="M50,360 Q150,200 250,280 Q350,360 440,200" fill="rgba(255,255,255,.04)"/>
+    </svg>
+    <div class="panel-inner">
+      <div class="panel-word">Create</div>
+      <div class="panel-sub">Always making something</div>
+    </div>
+  </div>
+
+  <div class="panel p2 reveal delay1">
+    <svg class="panel-art" viewBox="0 0 440 360" preserveAspectRatio="xMidYMid slice">
+      <circle cx="220" cy="180" r="140" fill="none" stroke="rgba(244,240,234,.06)" stroke-width="1"/>
+      <circle cx="220" cy="180" r="90" fill="none" stroke="rgba(244,240,234,.04)" stroke-width="1"/>
+      <circle cx="220" cy="180" r="50" fill="rgba(201,169,110,.06)"/>
+      <text x="220" y="195" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="48" fill="rgba(201,169,110,.18)">愛</text>
+    </svg>
+    <div class="panel-inner">
+      <div class="panel-word">Gaara</div>
+      <div class="panel-sub">愛 · The origin</div>
+    </div>
+  </div>
+
+  <div class="panel p3 reveal delay2">
+    <svg class="panel-art" viewBox="0 0 440 360" preserveAspectRatio="xMidYMid slice">
+      <path d="M0,180 Q110,80 220,180 Q330,280 440,180" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="2"/>
+      <path d="M0,200 Q110,100 220,200 Q330,300 440,200" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="1.5"/>
+      <circle cx="220" cy="180" r="30" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.15)" stroke-width="1"/>
+    </svg>
+    <div class="panel-inner">
+      <div class="panel-word">Evolve</div>
+      <div class="panel-sub">Never stop moving</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ MARQUEE ══ -->
+<div id="mq">
+  <div class="mq-track">
+    <div class="mq-row">
+      <span class="mq-t">GxdGaara</span><span class="mq-dot"></span>
+      <span class="mq-t">Creating</span><span class="mq-dot"></span>
+      <span class="mq-t">Exploring</span><span class="mq-dot"></span>
+      <span class="mq-t">Evolving</span><span class="mq-dot"></span>
+      <span class="mq-t">Syzygy</span><span class="mq-dot"></span>
+      <span class="mq-t">Sand & Storms</span><span class="mq-dot"></span>
+      <span class="mq-t">Hood Roots</span><span class="mq-dot"></span>
+      <span class="mq-t">Still Standing</span><span class="mq-dot"></span>
+    </div>
+    <div class="mq-row" aria-hidden="true">
+      <span class="mq-t">GxdGaara</span><span class="mq-dot"></span>
+      <span class="mq-t">Creating</span><span class="mq-dot"></span>
+      <span class="mq-t">Exploring</span><span class="mq-dot"></span>
+      <span class="mq-t">Evolving</span><span class="mq-dot"></span>
+      <span class="mq-t">Syzygy</span><span class="mq-dot"></span>
+      <span class="mq-t">Sand & Storms</span><span class="mq-dot"></span>
+      <span class="mq-t">Hood Roots</span><span class="mq-dot"></span>
+      <span class="mq-t">Still Standing</span><span class="mq-dot"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SOCIALS ══ -->
+<section id="socials">
+  <div class="soc-header">
+    <div class="soc-h"><span>03</span> — Find Me</div>
+    <div class="soc-note">Pick a platform ↓</div>
+  </div>
+  <ul class="soc-list">
+    <li class="soc-item reveal">
+      <a href="https://instagram.com/_preethuu.u" target="_blank" class="soc-link">
+        <span class="soc-n">01</span>
+        <span class="soc-name">Instagram</span>
+        <span class="soc-handle">@_preethuu.u</span>
+        <span class="soc-arr">↗</span>
+      </a>
+    </li>
+    <li class="soc-item reveal delay1">
+      <a href="#" class="soc-link">
+        <span class="soc-n">02</span>
+        <span class="soc-name">Discord</span>
+        <span class="soc-handle">gxdgaara</span>
+        <span class="soc-arr">↗</span>
+      </a>
+    </li>
+    <li class="soc-item reveal delay2">
+      <a href="https://pinterest.com/preethugowda129" target="_blank" class="soc-link">
+        <span class="soc-n">03</span>
+        <span class="soc-name">Pinterest</span>
+        <span class="soc-handle">preethugowda129</span>
+        <span class="soc-arr">↗</span>
+      </a>
+    </li>
+    <li class="soc-item reveal delay3">
+      <a href="mailto:preethugowda129@gmail.com" class="soc-link">
+        <span class="soc-n">04</span>
+        <span class="soc-name">Email</span>
+        <span class="soc-handle">preethugowda129@gmail.com</span>
+        <span class="soc-arr">↗</span>
+      </a>
+    </li>
+  </ul>
+</section>
+
+<!-- ══ CLOSING ══ -->
+<section id="closing">
+  <div class="close-left">
+    <div class="close-label">Built different</div>
+    <div class="close-h">
+      <span class="l1 cl-line">Built from sand.</span>
+      <span class="l2 cl-line">Forged in storms.</span>
+      <span class="l3 cl-line">Still standing.</span>
+    </div>
+    <div class="close-sub" id="csub">GxdGaara · 愛 · Always becoming</div>
+  </div>
+
+  <div class="close-right">
+    <div class="cr-orb cr1"></div>
+    <div class="cr-orb cr2"></div>
+    <div class="cr-orb cr3"></div>
+    <div class="cr-kanji">愛</div>
+    <div class="cr-tag">愛 · GxdGaara</div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <span class="f-l">© GxdGaara</span>
+  <span class="f-r">愛</span>
+</footer>
+
+<script>
+/* ── LOADER ── */
+window.addEventListener('load',()=>{
+  setTimeout(()=>document.getElementById('loader').classList.add('out'),1700);
+});
+
+/* ── CURSOR ── */
+const dot=document.getElementById('dot');
+const ring=document.getElementById('ring');
+let mx=-300,my=-300,rx=-300,ry=-300;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+(function loop(){
+  dot.style.left=mx+'px';dot.style.top=my+'px';
+  rx+=(mx-rx)*.11;ry+=(my-ry)*.11;
+  ring.style.left=rx+'px';ring.style.top=ry+'px';
+  requestAnimationFrame(loop);
+})();
+document.querySelectorAll('a,.tag').forEach(el=>{
+  el.addEventListener('mouseenter',()=>document.body.classList.add('link-hover'));
+  el.addEventListener('mouseleave',()=>document.body.classList.remove('link-hover'));
+});
+
+/* ── SCROLL REVEAL ── */
+const io=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('on');});
+},{threshold:.12});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+/* ── CLOSING REVEAL ── */
+const clLines=document.querySelectorAll('.cl-line');
+const csub=document.getElementById('csub');
+new IntersectionObserver(entries=>{
+  if(entries[0].isIntersecting){
+    clLines.forEach(l=>l.classList.add('on'));
+    setTimeout(()=>csub.classList.add('on'),900);
+  }
+},{threshold:.2}).observe(document.getElementById('closing'));
+
+/* ── PANEL PARALLAX (subtle) ── */
+window.addEventListener('scroll',()=>{
+  const sy=window.scrollY;
+  document.querySelectorAll('.orb,.cr-orb').forEach((o,i)=>{
+    const speed=.03+i*.01;
+    o.style.transform=`translateY(${sy*speed}px)`;
+  });
+});
+</script>
+</body>
+</html>
