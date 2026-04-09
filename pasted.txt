@@ -1,0 +1,9 @@
+<html>
+<head>
+    <title>My Portfolio</title>
+</head>
+<body>
+    <h1>Welcome to My Portfolio</h1>
+    <p>This is the showcase of my work and projects.</p>
+</body>
+</html>
